@@ -5,186 +5,214 @@
   <title>Typing Speed Test</title>
 
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
+      background-color: #f5f5f0;
       font-family: monospace;
-      text-align: center;
-      padding: 30px;
-      background: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
     }
 
     h1 {
+      font-size: 20px;
+      font-weight: normal;
+      color: #222;
       margin-bottom: 6px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
 
     p.subtitle {
-      color: #888;
+      font-size: 11px;
+      color: #999;
       margin-bottom: 24px;
     }
 
-    /* The passage box — words are coloured here */
+    /* the box showing the passage */
     #passage {
-      font-size: 18px;
-      line-height: 1.8;
-      max-width: 680px;
-      margin: 0 auto 16px;
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 16px;
-      text-align: left;
-    }
-
-    /* Colour classes applied to each word span */
-    .word-current  { background: #ddeeff; border-radius: 3px; }
-    .word-correct  { color: #2a9d2a; }
-    .word-wrong    { color: #cc0000; text-decoration: underline; }
-
-    /* The input where the user types */
-    #typing-input {
-      font-family: monospace;
-      font-size: 16px;
       width: 680px;
-      max-width: 100%;
-      padding: 8px;
-      border: 1px solid #aaa;
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      font-size: 16px;
+      line-height: 2;
+      border-radius: 6px;
+      margin-bottom: 16px;
     }
 
-    /* Stats row */
+    /* each word in the passage is wrapped in a span */
+    span.word-current { background-color: #d0e8ff; border-radius: 3px; }
+    span.word-correct  { color: #2e7d32; }
+    span.word-wrong    { color: #c62828; text-decoration: underline; }
+
+    /* input box where the user types */
+    #typing-input {
+      width: 680px;
+      padding: 10px 14px;
+      font-size: 16px;
+      font-family: monospace;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      outline: none;
+      margin-bottom: 16px;
+    }
+
+    #typing-input:focus {
+      border-color: #888;
+    }
+
+    /* stats row */
     #stats {
-      margin: 16px auto;
-      font-size: 15px;
+      display: flex;
+      gap: 40px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      text-align: center;
     }
 
-    #stats span {
-      margin: 0 16px;
-    }
+    .stat-label { color: #aaa; margin-bottom: 3px; }
+    .stat-num   { font-size: 20px; color: #333; }
 
-    /* Result box shown at the end */
+    /* result box shown at the end */
     #result {
-      font-size: 20px;
-      margin: 20px auto;
-      padding: 16px;
-      max-width: 400px;
+      display: none;
+      width: 680px;
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 2;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    /* restart button */
+    button {
+      padding: 8px 24px;
+      font-family: monospace;
+      font-size: 13px;
       background: #fff;
       border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    button {
-      margin-top: 12px;
-      padding: 8px 20px;
-      font-size: 14px;
-      cursor: pointer;
+    button:hover {
+      background: #eee;
     }
   </style>
 </head>
 <body>
 
   <h1>Typing Speed Test</h1>
-  <p class="subtitle">Type the passage below as fast and accurately as you can.</p>
+  <p class="subtitle">type the passage below — press space after each word</p>
 
-  <!-- The passage is split into word spans by JS -->
+  <!-- the passage is shown here word by word -->
   <div id="passage"></div>
 
-  <!-- User types here -->
-  <input id="typing-input" type="text" placeholder="Start typing to begin…" autocomplete="off" />
+  <!-- user types here -->
+  <input id="typing-input" type="text" placeholder="start typing..." autocomplete="off" />
 
-  <!-- Live stats during the test -->
+  <!-- live stats -->
   <div id="stats">
-    <span>Time: <strong id="time-display">60</strong>s</span>
-    <span>WPM: <strong id="wpm-display">0</strong></span>
-    <span>Accuracy: <strong id="acc-display">100</strong>%</span>
+    <div>
+      <div class="stat-label">Time Left</div>
+      <div class="stat-num" id="time-display">60</div>
+    </div>
+    <div>
+      <div class="stat-label">WPM</div>
+      <div class="stat-num" id="wpm-display">0</div>
+    </div>
+    <div>
+      <div class="stat-label">Accuracy</div>
+      <div class="stat-num" id="acc-display">100</div>
+    </div>
   </div>
 
-  <!-- Shown only when the test ends -->
-  <div id="result" style="display:none"></div>
+  <!-- shown when test ends -->
+  <div id="result"></div>
 
   <button id="restart-btn">Restart</button>
 
   <script>
 
-    // ── Passages to choose from ──────────────────────────────────
+    //Passages to pick from 
     var PASSAGES = [
-      "The quick brown fox jumps over the lazy dog near the river bank on a sunny afternoon in the middle of summer.",
-      "Programming is the art of telling another human being what one wants the computer to do in a clear and simple way.",
-      "A journey of a thousand miles begins with a single step and the courage to keep moving forward no matter what.",
-      "The best way to predict the future is to create it yourself through hard work patience and a willingness to learn.",
-      "Simple code is better than clever code because other people need to read it understand it and maintain it over time."
+      "The quick brown fox jumps over the lazy dog near the river bank on a sunny afternoon.",
+      "Programming is the art of telling another human what one wants the computer to do.",
+      "A journey of a thousand miles begins with a single step and the courage to keep going.",
+      "The best way to predict the future is to create it through hard work and patience.",
+      "Simple code is better than clever code because other people need to read and understand it."
     ];
 
-    //  Test settings
-    var TIME_LIMIT = 60;  // seconds for each round
+    var TIME_LIMIT = 60;   // total seconds for the test
 
-    //  State variables
-    var words        = [];   // array of words in the current passage
-    var currentIndex = 0;    // which word the user is on right now
-    var correctCount = 0;    // how many words typed correctly so far
-    var wrongCount   = 0;    // how many words typed wrongly so far
+    //  State variables (track what is happening) 
+    var words        = [];     // all words in the current passage
+    var currentIndex = 0;      // which word the user is on right now
+    var correctCount = 0;      // words typed correctly
+    var wrongCount   = 0;      // words typed wrongly
     var timeLeft     = TIME_LIMIT;
-    var timer        = null;
-    var testStarted  = false;
+    var timer        = null;   // holds the setInterval so we can stop it later
+    var testStarted  = false;  // has the user started typing yet
 
-    //  DOM references
-    var passageDiv   = document.getElementById('passage');
-    var typingInput  = document.getElementById('typing-input');
-    var timeDisplay  = document.getElementById('time-display');
-    var wpmDisplay   = document.getElementById('wpm-display');
-    var accDisplay   = document.getElementById('acc-display');
-    var resultDiv    = document.getElementById('result');
-    var restartBtn   = document.getElementById('restart-btn');
+  
+    var passageDiv  = document.getElementById('passage');
+    var inputBox    = document.getElementById('typing-input');
+    var timeDisplay = document.getElementById('time-display');
+    var wpmDisplay  = document.getElementById('wpm-display');
+    var accDisplay  = document.getElementById('acc-display');
+    var resultDiv   = document.getElementById('result');
+    var restartBtn  = document.getElementById('restart-btn');
 
 
-    //  SETUP
- 
-
-    // Pick a random passage and build the word spans
+   
+    // Load a passage onto the screen
     function loadPassage() {
+
+      // pick a random passage from the array
       var randomIndex = Math.floor(Math.random() * PASSAGES.length);
       var passage     = PASSAGES[randomIndex];
-      words           = passage.split(' ');
 
-      // Build one <span> per word inside the passage div
+      // split the passage into individual words
+      words = passage.split(' ');
+      //"hello world" → ["hello", "world"] --spaces are used as separators but they themselves are not include int the resulting array
+
+      // clear the passage div before adding new words
       passageDiv.innerHTML = '';
+
+      // create one <span> per word and add it to the passage div
       for (var i = 0; i < words.length; i++) {
-        var span = document.createElement('span');
-        span.textContent = words[i] + ' ';
-        span.id = 'word-' + i;
-        passageDiv.appendChild(span);
+        var span         = document.createElement('span');//creates a span element for each word
+        span.textContent = words[i] + ' ';   // add space so words don't stick together ,,remember the space that we add here is not included in the words array ,we have just added it to the span element
+        span.id          = 'word-' + i;      // e.g. id="word-0", id="word-1"
+        passageDiv.appendChild(span);//adds it to the passage div
       }
 
-      // Highlight the first word
-      highlightWord(0);
-    }
-
-    // Reset everything back to the starting state
-    function resetTest() {
-      clearInterval(timer);
-      testStarted  = false;
-      currentIndex = 0;
-      correctCount = 0;
-      wrongCount   = 0;
-      timeLeft     = TIME_LIMIT;
-
-      typingInput.value   = '';
-      typingInput.disabled = false;
-      typingInput.focus();
-
-      timeDisplay.textContent = TIME_LIMIT;
-      wpmDisplay.textContent  = 0;
-      accDisplay.textContent  = 100;
-
-      resultDiv.style.display = 'none';
-
-      loadPassage();
+      // highlight the first word so user knows where to start
+      document.getElementById('word-0').classList.add('word-current');//adds the class "word-current" to the first word to highlight it
     }
 
 
-    //  TIMER
-
-
+    
+    //  Start the countdown timer
     function startTimer() {
-      timer = setInterval(function () {
-        timeLeft--;
-        timeDisplay.textContent = timeLeft;
 
+      // run this every 1000ms (1 second)
+      timer = setInterval(function() {
+        timeLeft--;//decrease the time left by 1 second
+        timeDisplay.textContent = timeLeft;
+        // when time runs out, end the test
         if (timeLeft <= 0) {
           endTest();
         }
@@ -192,142 +220,139 @@
     }
 
 
-    //  WORD HIGHLIGHTING
 
-
-    // Remove highlight from a word span
-    function clearHighlight(index) {
-      var span = document.getElementById('word-' + index);
-      if (span) span.classList.remove('word-current');
-    }
-
-    // Add the blue highlight to show which word is active
-    function highlightWord(index) {
-      var span = document.getElementById('word-' + index);
-      if (span) span.classList.add('word-current');
-    }
-
-    // Mark a word green (correct) or red (wrong)
-    function markWord(index, isCorrect) {
-      var span = document.getElementById('word-' + index);
-      if (!span) return;
-      span.classList.remove('word-current');
-      if (isCorrect) {
-        span.classList.add('word-correct');
-      } else {
-        span.classList.add('word-wrong');
-      }
-    }
-
-
-    //  STATS CALCULATION
-
-
-    // WPM = correct words typed ÷ minutes elapsed
-    function calculateWPM() {
-      var minutesElapsed = (TIME_LIMIT - timeLeft) / 60;
-      if (minutesElapsed === 0) return 0;
-      return Math.round(correctCount / minutesElapsed);
-    }
-
-    // Accuracy = correct words ÷ total words attempted × 100
-    function calculateAccuracy() {
-      var totalAttempted = correctCount + wrongCount;
-      if (totalAttempted === 0) return 100;
-      return Math.round((correctCount / totalAttempted) * 100);
-    }
-
-    function updateStats() {
-      wpmDisplay.textContent = calculateWPM();
-      accDisplay.textContent = calculateAccuracy();
-    }
-
-    //  END TEST
-
-
-    function endTest() {
-      clearInterval(timer);
-      typingInput.disabled = true;
-
-      var finalWPM = calculateWPM();
-      var finalAcc = calculateAccuracy();
-
-      resultDiv.innerHTML =
-        '<strong>Test Complete!</strong><br><br>' +
-        'WPM: <strong>' + finalWPM + '</strong><br>' +
-        'Accuracy: <strong>' + finalAcc + '%</strong><br>' +
-        'Correct words: <strong>' + correctCount + '</strong><br>' +
-        'Wrong words: <strong>' + wrongCount + '</strong>';
-
-      resultDiv.style.display = 'block';
-    }
-
-
-    //  TYPING INPUT HANDLER
-
-
-    typingInput.addEventListener('keyup', function (event) {
-
-      // Start the timer on the very first keypress
-      if (!testStarted) {
+    //Listen for what the user types
+    inputBox.addEventListener('keyup', function(e) {//functions runs after the user releases a key --this all happens after each keysroke
+      // start the timer on the very first keypress
+      if (!testStarted) {//e is the event object that contains information about the key event, including which key was pressed
         testStarted = true;
-        startTimer();
+        startTimer();//starts the timer
       }
 
-      // We only act when the user presses Space (to submit a word)
-      if (event.key !== ' ') return;
+      // we only check the word when the user presses Space
+      if (e.key !== ' ') return;//stops the function from running if the key pressed is not space due to which the input value will not be checked until the user presses space which is when we want to check if the word is correct or not as every keystroke will trigger this function and
 
-      // Get whatever the user typed, trimming the trailing space
-      var typedWord = typingInput.value.trim();
-
-      // Ignore empty presses (double-space)
-      if (typedWord === '') {
-        typingInput.value = '';
-        return;
+      // get what the user typed, remove the trailing space
+      var typedWord = inputBox.value.trim(); //removes whitespace from both ends of the string, so it removes the trailing space that the user typed to trigger the check
+//the space input that allows the function to run further is removed above 
+      // ignore if user just pressed space without typing anything
+      if (typedWord === '') {//if the users first keystroke was a spce then the trim function will remove it due to which the the typeword becomes empty 
+        inputBox.value = '';//so this will reset the vlaue back to empty as we dont want to count it as a wrong word or move to the next word in the passage
+        return;//we return so that and we wait for the function to run again when the uses presses a keystroke
       }
 
-      // Check if the typed word matches the expected word
-      var expectedWord = words[currentIndex];
-      var isCorrect    = (typedWord === expectedWord);
+      // check if what they typed matches the current word
+      var expectedWord = words[currentIndex]; //the current index is initially set to zero
+      var isCorrect    = (typedWord === expectedWord); //this will check this condition at every keystroke and a 
 
-      // Update counters
+      // update the correct or wrong counter
       if (isCorrect) {
         correctCount++;
       } else {
         wrongCount++;
       }
 
-      // Colour the word in the passage
-      markWord(currentIndex, isCorrect);
+      // colour the word green or red in the passage
+      var currentSpan = document.getElementById('word-' + currentIndex);//this is the id of the span element that contains the current word in the passage
+      currentSpan.classList.remove('word-current'); //this will remove that blue highlight
+      if (isCorrect) {
+        currentSpan.classList.add('word-correct');//will add the green color
+      } else {
+        currentSpan.classList.add('word-wrong');//will ass the re color
+      }
 
-      // Move to the next word
+      
+      inputBox.value = ''; //after checking we reset the input box to empty
+
+      // move to the next word
       currentIndex++;
 
-      // Clear the input box
-      typingInput.value = '';
+      // update WPM and accuracy on screen
+      wpmDisplay.textContent = calculateWPM();//these functions are called after every word check to update thrir values in realtime
+      accDisplay.textContent = calculateAccuracy();
 
-      // Update the live stats
-      updateStats();
-
-      // If all words are done, end the test early
+      // if all words are done end the test early
       if (currentIndex >= words.length) {
-        endTest();
+        endTest();//this will call the end test function and after its competion thsi function will end
         return;
       }
 
-      // Highlight the next word
-      highlightWord(currentIndex);
+      // highlight the next word
+      document.getElementById('word-' + currentIndex).classList.add('word-current');
     });
 
-    //  RESTART BUTTON
+
+  
+    //  Calculate WPM and Accuracy
+
+    function calculateWPM() {
+      var minutesElapsed = (TIME_LIMIT - timeLeft) / 60;
+      if (minutesElapsed === 0) return 0;//we return 0 becaue we sont want the wpm to be infinity at the very start of the test when the user has just typed the first word and the timer has just started so we have not yet elapsed any time but we have one correct word which would give us a wpm of infinity if we didnt handle this case
+      return Math.round(correctCount / minutesElapsed);
+    }
+
+    function calculateAccuracy() {
+      var total = correctCount + wrongCount;
+      if (total === 0) return 100;
+      return Math.round((correctCount / total) * 100);
+    }
+
+
    
+    // End the test
+    
+    function endTest() {
 
-    restartBtn.addEventListener('click', function () {
-      resetTest();
+      // stop the timer
+      clearInterval(timer);
+
+      // disable the input so user can't keep typing
+      inputBox.disabled = true;
+
+      // show the final result box
+      resultDiv.innerHTML =//we set the inner html of the result div to show the final stats of the test
+        '<strong>Test Complete!</strong><br><br>' +
+        'WPM: <strong>'      + calculateWPM()      + '</strong><br>' +
+        'Accuracy: <strong>' + calculateAccuracy()  + '%</strong><br>' +
+        'Correct: <strong>'  + correctCount         + ' words</strong><br>' +
+        'Wrong: <strong>'    + wrongCount           + ' words</strong>';
+
+      resultDiv.style.display = 'block';//we set the display from none to blcok so that it can be viewed
+    }
+
+
+   
+    //Restart button
+    restartBtn.addEventListener('click', function() {
+
+      // stop any running timer
+      clearInterval(timer);
+
+      // reset all state variables back to start
+      testStarted  = false;
+      currentIndex = 0;
+      correctCount = 0;
+      wrongCount   = 0;
+      timeLeft     = TIME_LIMIT;
+      timer        = null;
+
+      // reset the screen
+      inputBox.value          = '';
+      inputBox.disabled       = false;
+      inputBox.focus();
+      timeDisplay.textContent = TIME_LIMIT;
+      wpmDisplay.textContent  = 0;
+      accDisplay.textContent  = 100;
+      resultDiv.style.display = 'none';
+
+      // load a fresh passage
+      loadPassage();
     });
 
-    //  Start the first test on page load\
-    resetTest();
+
+    // Run on page load
+    loadPassage();
+    inputBox.focus();
 
   </script>
 </body>
